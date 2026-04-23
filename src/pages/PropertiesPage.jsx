@@ -191,6 +191,7 @@ function PropertiesPage() {
   const [openMenu, setOpenMenu] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false)
+  const [isAddPropertySuccessOpen, setIsAddPropertySuccessOpen] = useState(false)
   const [addPropertyStep, setAddPropertyStep] = useState(1)
   const [selectedType, setSelectedType] = useState('نوع العقار')
   const [selectedSort, setSelectedSort] = useState('ترتيب حسب')
@@ -208,7 +209,13 @@ function PropertiesPage() {
   const [addPropertyArea, setAddPropertyArea] = useState('')
   const [addPropertyReference, setAddPropertyReference] = useState('')
   const [addPropertyFloor, setAddPropertyFloor] = useState('')
+  const [addPropertyBuildingNumber, setAddPropertyBuildingNumber] = useState('')
+  const [addPropertyDetailedAddress, setAddPropertyDetailedAddress] = useState('')
   const [addPropertyCity, setAddPropertyCity] = useState('')
+  const [addPropertyDailyPrice, setAddPropertyDailyPrice] = useState('')
+  const [addPropertyMonthlyPrice, setAddPropertyMonthlyPrice] = useState('')
+  const [addPropertyYearlyPrice, setAddPropertyYearlyPrice] = useState('')
+  const [addSelectedFeatures, setAddSelectedFeatures] = useState([])
   const [addPropertyFurnishing, setAddPropertyFurnishing] = useState('مفروشة بالكامل')
   const [addPropertyImages, setAddPropertyImages] = useState([])
   const [addPropertyVideos, setAddPropertyVideos] = useState([])
@@ -246,7 +253,7 @@ function PropertiesPage() {
   }, [])
 
   useEffect(() => {
-    const hasOpenModal = isAddPropertyOpen || isAdvancedOpen || Boolean(propertyToDelete) || Boolean(propertyToEdit)
+    const hasOpenModal = isAddPropertyOpen || isAddPropertySuccessOpen || isAdvancedOpen || Boolean(propertyToDelete) || Boolean(propertyToEdit)
     if (!hasOpenModal) {
       return undefined
     }
@@ -254,6 +261,7 @@ function PropertiesPage() {
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
         setIsAddPropertyOpen(false)
+        setIsAddPropertySuccessOpen(false)
         setIsAdvancedOpen(false)
         setIsCityMenuOpen(false)
         setPropertyToDelete(null)
@@ -269,7 +277,7 @@ function PropertiesPage() {
       document.body.style.overflow = ''
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [isAddPropertyOpen, isAdvancedOpen, propertyToDelete, propertyToEdit])
+  }, [isAddPropertyOpen, isAddPropertySuccessOpen, isAdvancedOpen, propertyToDelete, propertyToEdit])
 
   const toggleMenu = (menuName) => {
     setOpenMenu((current) => (current === menuName ? null : menuName))
@@ -312,8 +320,25 @@ function PropertiesPage() {
     addPropertyVideos.forEach((video) => URL.revokeObjectURL(video.url))
     setAddPropertyImages([])
     setAddPropertyVideos([])
+    setAddPropertyBuildingNumber('')
+    setAddPropertyDetailedAddress('')
+    setAddPropertyCity('')
+    setAddPropertyDailyPrice('')
+    setAddPropertyMonthlyPrice('')
+    setAddPropertyYearlyPrice('')
+    setAddSelectedFeatures([])
+    setAddLocationPinned(false)
     setAddPropertyStep(1)
     setIsAddPropertyOpen(false)
+  }
+
+  const closeAddPropertySuccessModal = () => {
+    setIsAddPropertySuccessOpen(false)
+  }
+
+  const handleAddPropertySubmit = () => {
+    closeAddPropertyModal()
+    setIsAddPropertySuccessOpen(true)
   }
 
   const openAddPropertyFilePicker = () => {
@@ -400,6 +425,14 @@ function PropertiesPage() {
     setter((current) => Math.max(0, current + delta))
   }
 
+  const toggleAddFeature = (feature) => {
+    setAddSelectedFeatures((current) =>
+      current.includes(feature)
+        ? current.filter((item) => item !== feature)
+        : [...current, feature]
+    )
+  }
+
   const isAddPropertyReady = addPropertyName.trim() && addPropertyDescription.trim() && addSelectedPropertyCategory
 
   const handleAddPropertyNext = () => {
@@ -407,7 +440,12 @@ function PropertiesPage() {
       return
     }
 
-    setAddPropertyStep((current) => Math.min(current + 1, 6))
+    if (addPropertyStep === 8) {
+      handleAddPropertySubmit()
+      return
+    }
+
+    setAddPropertyStep((current) => Math.min(current + 1, 8))
   }
 
   const handleAddPropertyPrevious = () => {
@@ -662,7 +700,8 @@ function PropertiesPage() {
 
             <div className="property-add-progress">
               <span
-                className={`property-add-progress-bar ${addPropertyStep >= 2 ? 'is-step-two' : ''}`}
+                className="property-add-progress-bar"
+                style={{ '--property-add-progress': `${(addPropertyStep / 8) * 100}%` }}
               />
             </div>
 
@@ -1038,14 +1077,36 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </section>
-              ) : (
+              ) : addPropertyStep === 6 ? (
                 <section className="property-add-section">
                   <h3>
-                    المدينة <span>*</span>
+                    عنوان العقار <span>*</span>
                   </h3>
 
                   <div className="property-add-form property-add-form--location">
-                    <label>
+                    <div className="property-add-address-card">
+                      <div className="property-add-address-fields">
+                        <label>
+                          <span>رقم المبنى</span>
+                          <input
+                            type="text"
+                            value={addPropertyBuildingNumber}
+                            onChange={(event) => setAddPropertyBuildingNumber(event.target.value)}
+                            placeholder="ادخل رقم المبنى ..."
+                          />
+                        </label>
+
+                        <label>
+                          <span>العنوان التفصيلي</span>
+                          <input
+                            type="text"
+                            value={addPropertyDetailedAddress}
+                            onChange={(event) => setAddPropertyDetailedAddress(event.target.value)}
+                            placeholder="ادخل عنوان الشارع ..."
+                          />
+                        </label>
+
+                        <label>
                       <span>المدينة</span>
                       <input
                         type="text"
@@ -1053,7 +1114,9 @@ function PropertiesPage() {
                         onChange={(event) => setAddPropertyCity(event.target.value)}
                         placeholder="مثال: القاهرة - التجمع الخامس"
                       />
-                    </label>
+                        </label>
+                      </div>
+                    </div>
 
                     <button
                       type="button"
@@ -1073,6 +1136,63 @@ function PropertiesPage() {
                     </button>
                   </div>
                 </section>
+              ) : addPropertyStep === 7 ? (
+                <section className="property-add-section">
+                  <h3>
+                    الأسعار <span>*</span>
+                  </h3>
+
+                  <div className="property-add-form property-add-form--pricing">
+                    <label>
+                      <span>السعر اليومي</span>
+                      <input
+                        type="text"
+                        value={addPropertyDailyPrice}
+                        onChange={(event) => setAddPropertyDailyPrice(event.target.value)}
+                        placeholder="مثال: 300 ريال / يوم"
+                      />
+                    </label>
+
+                    <label>
+                      <span>السعر الشهري</span>
+                      <input
+                        type="text"
+                        value={addPropertyMonthlyPrice}
+                        onChange={(event) => setAddPropertyMonthlyPrice(event.target.value)}
+                        placeholder="مثال: 8000 ريال / شهر"
+                      />
+                    </label>
+
+                    <label>
+                      <span>السعر السنوي</span>
+                      <input
+                        type="text"
+                        value={addPropertyYearlyPrice}
+                        onChange={(event) => setAddPropertyYearlyPrice(event.target.value)}
+                        placeholder="مثال: 90,000 ريال / سنة"
+                      />
+                    </label>
+                  </div>
+                </section>
+              ) : (
+                <section className="property-add-section">
+                  <h3>
+                    مميزات العقار <small>(اختياري)</small>
+                  </h3>
+
+                  <div className="property-add-feature-list">
+                    {propertyFeatures.map((feature) => (
+                      <label key={feature} className="property-add-feature-item">
+                        <input
+                          type="checkbox"
+                          checked={addSelectedFeatures.includes(feature)}
+                          onChange={() => toggleAddFeature(feature)}
+                        />
+                        <span>{feature}</span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
               )}
             </div>
 
@@ -1082,10 +1202,38 @@ function PropertiesPage() {
               </button>
               <button
                 type="button"
-                className={`property-add-next ${isAddPropertyReady ? 'is-ready' : ''}`}
+                className={`property-add-next ${isAddPropertyReady || addPropertyStep > 1 ? 'is-ready' : ''}`}
+                data-label={addPropertyStep === 8 ? 'إضافة العقار' : 'التالي'}
                 onClick={handleAddPropertyNext}
               >
                 التالي
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAddPropertySuccessOpen && (
+        <div className="properties-modal-overlay" onClick={closeAddPropertySuccessModal}>
+          <div className="property-add-success-modal" dir="rtl" onClick={(event) => event.stopPropagation()}>
+            <div className="property-add-success-icon-wrap">
+              <div className="property-add-success-icon">
+                <CheckCircle2 size={72} strokeWidth={2.8} />
+              </div>
+            </div>
+
+            <h2>تم إضافة العقار بنجاح!</h2>
+            <p>
+              نشكرك على إضافة عقارك، سيتم مراجعة البيانات للتأكد من صحتها خلال وقت قصير.
+            </p>
+            <strong>سوف تصلك إشعارات فور الموافقة عليه.</strong>
+
+            <div className="property-add-success-actions">
+              <button type="button" className="property-add-success-secondary" onClick={closeAddPropertySuccessModal}>
+                الرجوع للصفحة الرئيسية
+              </button>
+              <button type="button" className="property-add-success-primary" onClick={closeAddPropertySuccessModal}>
+                عرض حالة العقار
               </button>
             </div>
           </div>

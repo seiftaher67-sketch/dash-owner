@@ -32,8 +32,14 @@ const Navbar = () => {
               className="topbar-profile-button"
               aria-label="ملف المستخدم"
             >
-              <span className="topbar-profile-name">فيصل الحربي</span>
-              <img src="/image/1.jpg" alt="فيصل الحربي" className="topbar-avatar-image" />
+              <div className="topbar-profile-copy">
+                <span className="topbar-profile-name">فيصل الحربي</span>
+                <span className="topbar-profile-role">مالك الحساب</span>
+              </div>
+              <div className="topbar-avatar-wrap">
+                <img src="/image/1.jpg" alt="فيصل الحربي" className="topbar-avatar-image" />
+                <span className="topbar-avatar-status" />
+              </div>
             </button>
           </div>
 
@@ -49,11 +55,13 @@ const Navbar = () => {
         </div>
 
         <button type="button" className="topbar-icon-button" aria-label="الإشعارات">
-          <Bell size={22} />
+          <Bell size={20} />
+          <span className="topbar-icon-badge">3</span>
         </button>
 
         <button type="button" className="topbar-icon-button" aria-label="الرسائل">
-          <MessageSquare size={22} />
+          <MessageSquare size={20} />
+          <span className="topbar-icon-badge topbar-icon-badge-muted">5</span>
         </button>
       </div>
     </nav>

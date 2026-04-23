@@ -1,4 +1,5 @@
 import React from 'react'
+import { useState } from 'react'
 import {
   BarChart3,
   Building2,
@@ -69,14 +70,14 @@ const stats = [
 ]
 
 const viewsByProperty = [
-  { name: 'شقة مدينة نصر', views: 350 },
-  { name: 'فيلا التجمع الخامس', views: 510 },
-  { name: 'غرفة فندقية المعادي', views: 200 },
-  { name: 'فيلا الشيخ زايد', views: 600 },
-  { name: 'شقة 6 أكتوبر', views: 350 },
-  { name: 'شقة التجمع الخامس', views: 300 },
-  { name: 'فيلا الشيخ زايد 2', views: 600 },
-  { name: 'شقة التجمع الخامس 2', views: 300 },
+  { name: 'شقة\nمدينة نصر', views: 350 },
+  { name: 'فيلا\nالتجمع الخامس', views: 510 },
+  { name: 'غرفة فندقية\nالمعادي', views: 200 },
+  { name: 'فيلا\nالشيخ زايد', views: 600 },
+  { name: 'شقة\n6 أكتوبر', views: 350 },
+  { name: 'شقة\nالتجمع الخامس', views: 300 },
+  { name: 'فيلا\nالشيخ زايد 2', views: 600 },
+  { name: 'شقة\nالتجمع الخامس 2', views: 300 },
 ]
 
 const propertyTypes = [
@@ -96,17 +97,23 @@ const monthlyBookings = [
   { month: 'أغسطس', bookings: 100 },
 ]
 
+const analyticsPropertyOptions = ['جميع العقارات', 'الفلل', 'الشقق', 'الغرف الفندقية']
+
+const analyticsPeriodOptions = ['منذ يوم', 'آخر 7 أيام', 'آخر 30 يوم', 'منذ شهر', 'منذ 3 أشهر', 'منذ سنة']
+
+const viewerAvatars = ['/image/1.jpg', '/image/2.jpg', '/image/1.jpg', '/image/2.jpg', '/image/1.jpg']
+
 const topPerformers = [
-  { name: 'شقة في الزمالك', views: 12, status: 'متاح', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
-  { name: 'فيلا الشيخ زايد', views: 7, status: 'متاح', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
-  { name: 'فيلا الشيخ زايد', views: 4, status: 'محجوز', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
-  { name: 'فيلا الشيخ زايد', views: 5, status: 'محجوز', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
-  { name: 'فيلا الشيخ زايد', views: 8, status: 'متاح', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
+  { name: 'شقة في الزمالك', views: 12, status: 'متاح', viewers: viewerAvatars },
+  { name: 'فيلا الشيخ زايد', views: 7, status: 'متاح', viewers: viewerAvatars },
+  { name: 'فيلا الشيخ زايد', views: 4, status: 'محجوز', viewers: viewerAvatars },
+  { name: 'فيلا الشيخ زايد', views: 5, status: 'محجوز', viewers: viewerAvatars },
+  { name: 'فيلا الشيخ زايد', views: 8, status: 'متاح', viewers: viewerAvatars },
 ]
 
 const lowPerformers = [
-  { name: 'استوديو المهندسين', views: 1, status: 'متاح', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
-  { name: 'شقة 6 أكتوبر', views: 2, status: 'متاح', viewers: ['أ', 'ف', 'م', 'س', '+2'] },
+  { name: 'استوديو المهندسين', views: 1, status: 'متاح', viewers: viewerAvatars },
+  { name: 'شقة 6 أكتوبر', views: 2, status: 'متاح', viewers: viewerAvatars },
 ]
 
 const statusClassName = {
@@ -144,13 +151,34 @@ function AnalyticsStatCard({ stat }) {
 
 function ViewersStack({ viewers }) {
   return (
-    <div className="property-viewers-stack">
+    <div className="analytics-viewers-stack">
       {viewers.map((viewer, index) => (
-        <span key={`${viewer}-${index}`} className={`property-viewer-badge ${viewer === '+2' ? 'is-count' : ''}`}>
-          {viewer}
+        <span key={`${viewer}-${index}`} className="analytics-viewer-badge">
+          <img src={viewer} alt="" className="analytics-viewer-image" />
         </span>
       ))}
     </div>
+  )
+}
+
+function CustomXAxisTick({ x, y, payload }) {
+  const lines = payload.value.split('\n')
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {lines.map((line, index) => (
+        <text
+          key={index}
+          x={0}
+          y={index * 16 + 5}
+          textAnchor="middle"
+          fill="#1f2937"
+          fontSize={13}
+        >
+          {line}
+        </text>
+      ))}
+    </g>
   )
 }
 
@@ -177,7 +205,7 @@ function PerformanceTable({ title, tone, rows }) {
             {rows.map((row, index) => (
               <tr key={`${row.name}-${index}`}>
                 <td>{row.name}</td>
-                <td><ViewersStack viewers={row.viewers} /></td>
+                <td className="analytics-viewers-cell"><ViewersStack viewers={row.viewers} /></td>
                 <td>{row.views}</td>
                 <td><span className={statusClassName[row.status]}>{row.status}</span></td>
               </tr>
@@ -190,6 +218,11 @@ function PerformanceTable({ title, tone, rows }) {
 }
 
 function AnalyticsPage() {
+  const [selectedAnalyticsProperty, setSelectedAnalyticsProperty] = useState('جميع العقارات')
+  const [isAnalyticsPropertyOpen, setIsAnalyticsPropertyOpen] = useState(false)
+  const [selectedAnalyticsPeriod, setSelectedAnalyticsPeriod] = useState('آخر 7 أيام')
+  const [isAnalyticsPeriodOpen, setIsAnalyticsPeriodOpen] = useState(false)
+
   return (
     <section className="analytics-page">
       <header className="analytics-page-header">
@@ -204,15 +237,73 @@ function AnalyticsPage() {
       </header>
 
       <section className="analytics-filters">
-        <button type="button" className="analytics-filter-chip">
-          <ChevronDown size={22} />
-          <span>جميع العقارات</span>
-        </button>
+        <div className={`properties-select-wrap ${isAnalyticsPropertyOpen ? 'is-open' : ''}`}>
+          <button
+            type="button"
+            className="analytics-filter-chip analytics-filter-chip-centered"
+            onClick={() => {
+              setIsAnalyticsPropertyOpen((current) => !current)
+              setIsAnalyticsPeriodOpen(false)
+            }}
+          >
+            <ChevronDown size={22} />
+            <span>{selectedAnalyticsProperty}</span>
+          </button>
 
-        <button type="button" className="analytics-filter-chip">
-          <ChevronDown size={22} />
-          <span>آخر 7 أيام</span>
-        </button>
+          {isAnalyticsPropertyOpen && (
+            <div className="properties-dropdown-menu analytics-filter-menu">
+              <div className="properties-dropdown-scroll">
+                {analyticsPropertyOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={`properties-dropdown-option ${selectedAnalyticsProperty === option ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      setSelectedAnalyticsProperty(option)
+                      setIsAnalyticsPropertyOpen(false)
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={`properties-select-wrap ${isAnalyticsPeriodOpen ? 'is-open' : ''}`}>
+          <button
+            type="button"
+            className="analytics-filter-chip analytics-filter-chip-centered"
+            onClick={() => {
+              setIsAnalyticsPeriodOpen((current) => !current)
+              setIsAnalyticsPropertyOpen(false)
+            }}
+          >
+            <ChevronDown size={22} />
+            <span>{selectedAnalyticsPeriod}</span>
+          </button>
+
+          {isAnalyticsPeriodOpen && (
+            <div className="properties-dropdown-menu analytics-filter-menu">
+              <div className="properties-dropdown-scroll">
+                {analyticsPeriodOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={`properties-dropdown-option ${selectedAnalyticsPeriod === option ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      setSelectedAnalyticsPeriod(option)
+                      setIsAnalyticsPeriodOpen(false)
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="analytics-stats-grid">
@@ -222,25 +313,32 @@ function AnalyticsPage() {
       </section>
 
       <section className="analytics-two-column">
-        <article className="analytics-panel">
+        <article className="analytics-panel analytics-panel-views">
           <div className="analytics-panel-title">المشاهدات حسب العقار</div>
           <div className="analytics-chart-wrap">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={viewsByProperty} margin={{ top: 12, right: 0, left: 0, bottom: 18 }}>
+            <ResponsiveContainer width="100%" height={355}>
+              <BarChart data={viewsByProperty} margin={{ top: 16, right: 0, left: 0, bottom: 28 }}>
                 <CartesianGrid stroke="#e8edf5" vertical={false} />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tick={{ fill: '#1f2937', fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#697586', fontSize: 12 }} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  tick={<CustomXAxisTick />}
+                  height={58}
+                />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#1f2937', fontSize: 14 }} />
                 <Tooltip
                   cursor={{ fill: 'rgba(21, 89, 183, 0.08)' }}
                   contentStyle={{ borderRadius: 14, border: '1px solid #dbe4f0' }}
                 />
-                <Bar dataKey="views" fill="#1559b7" radius={[8, 8, 0, 0]} maxBarSize={38} />
+                <Bar dataKey="views" fill="#1559b7" radius={[10, 10, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </article>
 
-        <article className="analytics-panel">
+        <article className="analytics-panel analytics-panel-distribution">
           <div className="analytics-panel-title">توزيع أنواع العقارات</div>
           <div className="distribution-layout analytics-distribution-layout">
             <div className="distribution-list">
@@ -257,7 +355,7 @@ function AnalyticsPage() {
             </div>
 
             <div className="distribution-chart">
-              <ResponsiveContainer width="100%" height={270}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={propertyTypes}
@@ -265,9 +363,9 @@ function AnalyticsPage() {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    innerRadius={62}
-                    outerRadius={110}
-                    paddingAngle={2}
+                    innerRadius={70}
+                    outerRadius={115}
+                    paddingAngle={3}
                   >
                     {propertyTypes.map((item) => (
                       <Cell key={item.name} fill={item.color} />
@@ -305,7 +403,7 @@ function AnalyticsPage() {
         </div>
       </section>
 
-      <PerformanceTable title="أعلى العقارات أداءً" tone="success" rows={topPerformers} />
+      <PerformanceTable title="أعلى العقارات أداء" tone="success" rows={topPerformers} />
       <PerformanceTable title="العقارات الأقل زيارة" tone="danger" rows={lowPerformers} />
     </section>
   )

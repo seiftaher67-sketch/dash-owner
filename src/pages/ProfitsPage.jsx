@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -123,6 +123,287 @@ const statusClassName = {
   معلق: 'status-badge status-pending',
 }
 
+const csvHeaders = ['التاريخ', 'اسم العقار', 'نوع العقار', 'وسيلة الدفع', 'الحالة', 'المبلغ']
+const pdfColumnWidths = [150, 170, 110, 120, 90, 120]
+const allOptionValue = 'all'
+const allMonths = [
+  'يناير',
+  'فبراير',
+  'مارس',
+  'إبريل',
+  'مايو',
+  'يونيو',
+  'يوليو',
+  'أغسطس',
+  'سبتمبر',
+  'أكتوبر',
+  'نوفمبر',
+  'ديسمبر',
+]
+
+function createFileName(extension) {
+  const dateLabel = new Date().toISOString().slice(0, 10)
+  return `profits-report-${dateLabel}.${extension}`
+}
+
+function downloadFile(content, fileName, mimeType) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function escapeCsvValue(value) {
+  const normalizedValue = String(value ?? '').replace(/"/g, '""')
+  return `"${normalizedValue}"`
+}
+
+function buildCsvContent(rows) {
+  const headerRow = csvHeaders.map(escapeCsvValue).join(',')
+  const dataRows = rows.map((row) =>
+    [
+      row.date,
+      row.propertyName,
+      row.propertyType,
+      row.paymentMethod,
+      row.status,
+      row.amount,
+    ]
+      .map(escapeCsvValue)
+      .join(',')
+  )
+
+  return ['\uFEFF' + headerRow, ...dataRows].join('\n')
+}
+
+function formatPdfTimestamp() {
+  return new Date().toLocaleString('ar-EG')
+}
+
+function getTransactionMonthLabel(dateValue) {
+  const parts = String(dateValue).trim().split(' ')
+  return parts[1] ?? ''
+}
+
+function getFilterSummaryLines(filters) {
+  return [
+    `العقار: ${filters.propertyLabel}`,
+    `الفترة: ${filters.monthLabel}`,
+    `الدفع: ${filters.paymentLabel}`,
+    `الحالة: ${filters.statusLabel}`,
+  ]
+}
+
+function buildPdfFromJpegBytes(jpegBytes, imageWidth, imageHeight) {
+  const encoder = new TextEncoder()
+  const pdfWidth = 595.28
+  const pdfHeight = 841.89
+  const scale = Math.min(pdfWidth / imageWidth, pdfHeight / imageHeight)
+  const drawWidth = imageWidth * scale
+  const drawHeight = imageHeight * scale
+  const offsetX = (pdfWidth - drawWidth) / 2
+  const offsetY = (pdfHeight - drawHeight) / 2
+
+  const objects = [
+    '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+    '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+    `3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pdfWidth.toFixed(2)} ${pdfHeight.toFixed(2)}]
+/Resources << /XObject << /Im0 4 0 R >> >>
+/Contents 5 0 R >>
+endobj
+`,
+    `4 0 obj
+<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight}
+/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>
+stream
+`,
+    `5 0 obj
+<< /Length ${encoder.encode(`q\n${drawWidth.toFixed(2)} 0 0 ${drawHeight.toFixed(2)} ${offsetX.toFixed(2)} ${offsetY.toFixed(2)} cm\n/Im0 Do\nQ\n`).length} >>
+stream
+q
+${drawWidth.toFixed(2)} 0 0 ${drawHeight.toFixed(2)} ${offsetX.toFixed(2)} ${offsetY.toFixed(2)} cm
+/Im0 Do
+Q
+endstream
+endobj
+`,
+  ]
+
+  const chunks = [encoder.encode('%PDF-1.4\n%\xFF\xFF\xFF\xFF\n')]
+  const offsets = [0]
+  let currentOffset = chunks[0].length
+
+  objects.forEach((object, index) => {
+    offsets[index + 1] = currentOffset
+    const encoded = encoder.encode(object)
+    chunks.push(encoded)
+    currentOffset += encoded.length
+
+    if (index === 3) {
+      chunks.push(jpegBytes)
+      currentOffset += jpegBytes.length
+      const endStream = encoder.encode('\nendstream\nendobj\n')
+      chunks.push(endStream)
+      currentOffset += endStream.length
+    }
+  })
+
+  const xrefOffset = currentOffset
+  const xref = [
+    `xref\n0 ${objects.length + 1}\n`,
+    '0000000000 65535 f \n',
+    ...offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`),
+    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`,
+  ].join('')
+
+  chunks.push(encoder.encode(xref))
+  return new Blob(chunks, { type: 'application/pdf' })
+}
+
+function dataUrlToUint8Array(dataUrl) {
+  const base64 = dataUrl.split(',')[1]
+  const binary = window.atob(base64)
+  const bytes = new Uint8Array(binary.length)
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+
+  return bytes
+}
+
+function truncateText(context, value, maxWidth) {
+  if (context.measureText(value).width <= maxWidth) {
+    return value
+  }
+
+  let truncated = value
+  while (truncated.length > 0 && context.measureText(`${truncated}...`).width > maxWidth) {
+    truncated = truncated.slice(0, -1)
+  }
+
+  return `${truncated}...`
+}
+
+function renderProfitsReportToCanvas(reportTransactions, filters) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1240
+  canvas.height = 1754
+
+  const context = canvas.getContext('2d')
+  if (!context) {
+    throw new Error('Canvas context is not available')
+  }
+
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.direction = 'rtl'
+  context.textAlign = 'right'
+  context.imageSmoothingEnabled = true
+
+  context.fillStyle = '#0f172a'
+  context.font = '700 40px Tahoma'
+  context.fillText('تقرير الأرباح', 1120, 90)
+
+  context.fillStyle = '#64748b'
+  context.font = '24px Tahoma'
+  context.fillText(`تاريخ الإنشاء: ${formatPdfTimestamp()}`, 1120, 135)
+  getFilterSummaryLines(filters).forEach((line, index) => {
+    context.fillText(line, 1120, 175 + index * 28)
+  })
+
+  const summaryCardWidth = 500
+  const summaryCardHeight = 110
+  const summaryGap = 32
+  const summaryStartX = 620
+  const summaryStartY = 320
+
+  summaryCards.forEach((card, index) => {
+    const column = index % 2
+    const row = Math.floor(index / 2)
+    const x = summaryStartX - column * (summaryCardWidth + summaryGap)
+    const y = summaryStartY + row * (summaryCardHeight + summaryGap)
+
+    context.fillStyle = '#f8fbff'
+    context.strokeStyle = '#dbe4f0'
+    context.lineWidth = 2
+    context.beginPath()
+    context.roundRect(x, y, summaryCardWidth, summaryCardHeight, 18)
+    context.fill()
+    context.stroke()
+
+    context.fillStyle = '#475569'
+    context.font = '24px Tahoma'
+    context.fillText(card.title, x + summaryCardWidth - 28, y + 42)
+
+    context.fillStyle = '#0f172a'
+    context.font = '700 30px Tahoma'
+    context.fillText(card.value, x + summaryCardWidth - 28, y + 82)
+  })
+
+  const tableX = 60
+  const tableY = 630
+  const rowHeight = 72
+  const headerHeight = 72
+  const totalWidth = pdfColumnWidths.reduce((sum, width) => sum + width, 0)
+
+  context.fillStyle = '#eff6ff'
+  context.fillRect(tableX, tableY, totalWidth, headerHeight)
+
+  context.strokeStyle = '#dbe4f0'
+  context.lineWidth = 2
+  context.strokeRect(tableX, tableY, totalWidth, headerHeight + reportTransactions.length * rowHeight)
+
+  let currentX = tableX + totalWidth
+  context.fillStyle = '#0f172a'
+  context.font = '700 22px Tahoma'
+
+  csvHeaders.forEach((header, index) => {
+    const width = pdfColumnWidths[index]
+    currentX -= width
+    context.strokeRect(currentX, tableY, width, headerHeight)
+    context.fillText(header, currentX + width - 16, tableY + 44)
+  })
+
+  reportTransactions.forEach((transaction, rowIndex) => {
+    const rowY = tableY + headerHeight + rowIndex * rowHeight
+    const isEvenRow = rowIndex % 2 === 0
+
+    context.fillStyle = isEvenRow ? '#ffffff' : '#f8fafc'
+    context.fillRect(tableX, rowY, totalWidth, rowHeight)
+
+    const values = [
+      transaction.date,
+      transaction.propertyName,
+      transaction.propertyType,
+      transaction.paymentMethod,
+      transaction.status,
+      transaction.amount,
+    ]
+
+    let cellX = tableX + totalWidth
+    values.forEach((value, columnIndex) => {
+      const width = pdfColumnWidths[columnIndex]
+      cellX -= width
+      context.strokeRect(cellX, rowY, width, rowHeight)
+      context.fillStyle = '#1e293b'
+      context.font = '21px Tahoma'
+      const clippedValue = truncateText(context, value, width - 32)
+      context.fillText(clippedValue, cellX + width - 16, rowY + 44)
+    })
+  })
+
+  return canvas
+}
+
 function SummaryCard({ card }) {
   const Icon = card.icon
 
@@ -142,6 +423,70 @@ function SummaryCard({ card }) {
 }
 
 function ProfitsPage() {
+  const propertyOptions = [
+    { value: allOptionValue, label: 'جميع العقارات' },
+    ...Array.from(new Set(transactions.map((transaction) => transaction.propertyName))).map((propertyName) => ({
+      value: propertyName,
+      label: propertyName,
+    })),
+  ]
+  const monthOptions = [
+    { value: allOptionValue, label: 'كل الشهور' },
+    ...allMonths.map((month) => ({
+      value: month,
+      label: month,
+    })),
+  ]
+  const paymentOptions = [
+    { value: allOptionValue, label: 'جميع وسائل الدفع' },
+    ...Array.from(new Set(transactions.map((transaction) => transaction.paymentMethod))).map((paymentMethod) => ({
+      value: paymentMethod,
+      label: paymentMethod,
+    })),
+  ]
+  const statusOptions = [
+    { value: allOptionValue, label: 'جميع الحالات' },
+    ...Array.from(new Set(transactions.map((transaction) => transaction.status))).map((status) => ({
+      value: status,
+      label: status,
+    })),
+  ]
+
+  const [selectedProperty, setSelectedProperty] = useState(allOptionValue)
+  const [selectedMonth, setSelectedMonth] = useState(allOptionValue)
+  const [selectedPayment, setSelectedPayment] = useState(allOptionValue)
+  const [selectedStatus, setSelectedStatus] = useState(allOptionValue)
+
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesProperty = selectedProperty === allOptionValue || transaction.propertyName === selectedProperty
+    const matchesMonth = selectedMonth === allOptionValue || getTransactionMonthLabel(transaction.date) === selectedMonth
+    const matchesPayment = selectedPayment === allOptionValue || transaction.paymentMethod === selectedPayment
+    const matchesStatus = selectedStatus === allOptionValue || transaction.status === selectedStatus
+
+    return matchesProperty && matchesMonth && matchesPayment && matchesStatus
+  })
+
+  const selectedFilters = {
+    propertyLabel: propertyOptions.find((option) => option.value === selectedProperty)?.label ?? 'جميع العقارات',
+    monthLabel: monthOptions.find((option) => option.value === selectedMonth)?.label ?? 'كل الشهور',
+    paymentLabel: paymentOptions.find((option) => option.value === selectedPayment)?.label ?? 'جميع وسائل الدفع',
+    statusLabel: statusOptions.find((option) => option.value === selectedStatus)?.label ?? 'جميع الحالات',
+  }
+
+  const handleExportCsv = () => {
+    const csvContent = buildCsvContent(filteredTransactions)
+    downloadFile(csvContent, createFileName('csv'), 'text/csv;charset=utf-8;')
+  }
+
+  const handleExportPdf = () => {
+    const canvas = renderProfitsReportToCanvas(filteredTransactions, selectedFilters)
+    const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.95)
+    const jpegBytes = dataUrlToUint8Array(jpegDataUrl)
+    const pdfBlob = buildPdfFromJpegBytes(jpegBytes, canvas.width, canvas.height)
+
+    downloadFile(pdfBlob, createFileName('pdf'), 'application/pdf')
+  }
+
   return (
     <section className="profits-page">
         <header className="profits-page-header">
@@ -254,11 +599,19 @@ function ProfitsPage() {
             <h2>المعاملات التفصيلية</h2>
 
             <div className="profits-export-actions">
-              <button type="button" className="profits-export-button profits-export-button-pdf">
+              <button
+                type="button"
+                className="profits-export-button profits-export-button-pdf"
+                onClick={handleExportPdf}
+              >
                 <span>PDF</span>
                 <Download size={22} />
               </button>
-              <button type="button" className="profits-export-button profits-export-button-csv">
+              <button
+                type="button"
+                className="profits-export-button profits-export-button-csv"
+                onClick={handleExportCsv}
+              >
                 <span>CSV</span>
                 <Download size={22} />
               </button>
@@ -266,22 +619,54 @@ function ProfitsPage() {
           </div>
 
           <div className="profits-filters-row">
-            <button type="button" className="profits-filter-chip">
-              <ChevronDown size={24} />
-              <span>جميع العقارات</span>
-            </button>
-            <button type="button" className="profits-filter-chip">
-              <ChevronDown size={24} />
-              <span>الشهر</span>
-            </button>
-            <button type="button" className="profits-filter-chip">
-              <ChevronDown size={24} />
-              <span>جميع وسائل الدفع</span>
-            </button>
-            <button type="button" className="profits-filter-chip">
-              <ChevronDown size={24} />
-              <span>جميع الحالات</span>
-            </button>
+            <label className="profits-filter-chip">
+              <div className="profits-filter-control">
+                <select value={selectedProperty} onChange={(event) => setSelectedProperty(event.target.value)}>
+                  {propertyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={20} />
+              </div>
+            </label>
+            <label className="profits-filter-chip">
+              <div className="profits-filter-control">
+                <select value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)}>
+                  {monthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={20} />
+              </div>
+            </label>
+            <label className="profits-filter-chip">
+              <div className="profits-filter-control">
+                <select value={selectedPayment} onChange={(event) => setSelectedPayment(event.target.value)}>
+                  {paymentOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={20} />
+              </div>
+            </label>
+            <label className="profits-filter-chip">
+              <div className="profits-filter-control">
+                <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)}>
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={20} />
+              </div>
+            </label>
           </div>
 
           <div className="profits-table-wrap">
@@ -297,7 +682,7 @@ function ProfitsPage() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id}>
                     <td className="profits-table-date">{transaction.date}</td>
                     <td>{transaction.propertyName}</td>
@@ -309,6 +694,13 @@ function ProfitsPage() {
                     <td className="profits-table-amount">{transaction.amount}</td>
                   </tr>
                 ))}
+                {filteredTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="profits-table-empty">
+                      لا توجد معاملات مطابقة للفلاتر المختارة.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

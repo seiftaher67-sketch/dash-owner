@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BadgeCheck, ChevronDown, ChevronLeft, CornerUpLeft, Search, Star } from 'lucide-react'
 
 const commentRows = [
@@ -52,6 +52,10 @@ const commentRows = [
   },
 ]
 
+const propertyFilterOptions = ['جميع العقارات', 'الفلل', 'الشقق', 'الغرف الفندقية', 'الاستوديوهات']
+const ratingFilterOptions = ['جميع التقييمات', '5 نجوم', '4 نجوم فأعلى', '3 نجوم فأعلى', 'أقل من 3 نجوم']
+const sortFilterOptions = ['الأحدث أولاً', 'الأقدم أولاً', 'الأعلى تقييمًا', 'الأقل تقييمًا', 'الأكثر ردودًا']
+
 function RatingStars() {
   return (
     <span className="comments-rating-stars" aria-hidden="true">
@@ -67,10 +71,10 @@ function ReviewItem({ item }) {
 
   return (
     <article className={`comments-thread-item ${isReply ? 'is-reply' : ''}`}>
-      <div className="comments-thread-date">{item.date}</div>
-
       <div className="comments-thread-main">
         <div className="comments-thread-head">
+          <div className="comments-thread-date">{item.date}</div>
+
           <div className="comments-author-block">
             <img className="comments-avatar-image" src={item.avatar} alt={item.author} />
 
@@ -107,6 +111,11 @@ function ReviewItem({ item }) {
 }
 
 function CommentsPage() {
+  const [selectedPropertyFilter, setSelectedPropertyFilter] = useState('جميع العقارات')
+  const [selectedRatingFilter, setSelectedRatingFilter] = useState('جميع التقييمات')
+  const [selectedSortFilter, setSelectedSortFilter] = useState('الأحدث أولاً')
+  const [openFilter, setOpenFilter] = useState(null)
+
   return (
     <section className="comments-page">
         <header className="comments-page-header">
@@ -126,20 +135,98 @@ function CommentsPage() {
             <input type="search" placeholder="بحث باسم العميل أو العقار..." />
           </label>
 
-          <button type="button" className="comments-filter-chip">
-            <ChevronDown size={23} />
-            <span>جميع العقارات</span>
-          </button>
+          <div className={`properties-select-wrap ${openFilter === 'property' ? 'is-open' : ''}`}>
+            <button
+              type="button"
+              className="comments-filter-chip comments-filter-chip-centered"
+              onClick={() => setOpenFilter((current) => (current === 'property' ? null : 'property'))}
+            >
+              <ChevronDown size={23} />
+              <span>{selectedPropertyFilter}</span>
+            </button>
 
-          <button type="button" className="comments-filter-chip">
-            <ChevronDown size={23} />
-            <span>جميع التقييمات</span>
-          </button>
+            {openFilter === 'property' && (
+              <div className="properties-dropdown-menu">
+                <div className="properties-dropdown-scroll">
+                  {propertyFilterOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`properties-dropdown-option ${selectedPropertyFilter === option ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        setSelectedPropertyFilter(option)
+                        setOpenFilter(null)
+                      }}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-          <button type="button" className="comments-filter-chip">
-            <ChevronDown size={23} />
-            <span>الأحدث أولاً</span>
-          </button>
+          <div className={`properties-select-wrap ${openFilter === 'rating' ? 'is-open' : ''}`}>
+            <button
+              type="button"
+              className="comments-filter-chip comments-filter-chip-centered"
+              onClick={() => setOpenFilter((current) => (current === 'rating' ? null : 'rating'))}
+            >
+              <ChevronDown size={23} />
+              <span>{selectedRatingFilter}</span>
+            </button>
+
+            {openFilter === 'rating' && (
+              <div className="properties-dropdown-menu">
+                <div className="properties-dropdown-scroll">
+                  {ratingFilterOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`properties-dropdown-option ${selectedRatingFilter === option ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        setSelectedRatingFilter(option)
+                        setOpenFilter(null)
+                      }}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={`properties-select-wrap ${openFilter === 'sort' ? 'is-open' : ''}`}>
+            <button
+              type="button"
+              className="comments-filter-chip comments-filter-chip-centered"
+              onClick={() => setOpenFilter((current) => (current === 'sort' ? null : 'sort'))}
+            >
+              <ChevronDown size={23} />
+              <span>{selectedSortFilter}</span>
+            </button>
+
+            {openFilter === 'sort' && (
+              <div className="properties-dropdown-menu">
+                <div className="properties-dropdown-scroll">
+                  {sortFilterOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`properties-dropdown-option ${selectedSortFilter === option ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        setSelectedSortFilter(option)
+                        setOpenFilter(null)
+                      }}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="comments-thread-panel">

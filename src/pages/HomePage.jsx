@@ -34,16 +34,6 @@ const stats = [
     soft: '#dfeaf8',
   },
   {
-    title: 'عدد المشاهدات',
-    value: '1,234',
-    note: '+ 12.5 %',
-    trendLabel: 'مقارنة بآخر 7 أيام',
-    trend: 'up',
-    icon: Eye,
-    accent: '#31c45d',
-    soft: '#e1f4e6',
-  },
-  {
     title: 'متوسط التقييم',
     value: '4.8',
     note: '+ 7.3 %',
@@ -52,6 +42,16 @@ const stats = [
     icon: Star,
     accent: '#ffc107',
     soft: '#fff4d6',
+  },
+  {
+    title: 'عدد المشاهدات',
+    value: '1,234',
+    note: '+ 12.5 %',
+    trendLabel: 'مقارنة بآخر 7 أيام',
+    trend: 'up',
+    icon: Eye,
+    accent: '#31c45d',
+    soft: '#e1f4e6',
   },
   {
     title: 'عدد الحجوزات',
@@ -66,14 +66,14 @@ const stats = [
 ]
 
 const viewsByProperty = [
-  { name: 'شقة مدينة نصر', views: 350 },
-  { name: 'فيلا التجمع الخامس', views: 510 },
-  { name: 'غرفة فندقية المعادي', views: 200 },
-  { name: 'فيلا الشيخ زايد', views: 600 },
-  { name: 'شقة 6 أكتوبر', views: 350 },
-  { name: 'شقة التجمع الخامس', views: 300 },
-  { name: 'فيلا الشيخ زايد 2', views: 600 },
-  { name: 'شقة التجمع الخامس 2', views: 300 },
+  { name: 'شقة\nمدينة نصر', views: 350 },
+  { name: 'فيلا\nالتجمع الخامس', views: 510 },
+  { name: 'غرفة فندقية\nالمعادي', views: 200 },
+  { name: 'فيلا\nالشيخ زايد', views: 600 },
+  { name: 'شقة\n6 أكتوبر', views: 350 },
+  { name: 'شقة\nالتجمع الخامس', views: 300 },
+  { name: 'فيلا\nالشيخ زايد 2', views: 600 },
+  { name: 'شقة\nالتجمع الخامس 2', views: 300 },
 ]
 
 const propertyTypes = [
@@ -184,171 +184,189 @@ function RatingStars() {
   return <span className="rating-stars">★★★★★</span>
 }
 
+function CustomXAxisTick({ x, y, payload }) {
+  const lines = payload.value.split('\n')
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {lines.map((line, index) => (
+        <text
+          key={index}
+          x={0}
+          y={index * 16 + 5}
+          textAnchor="middle"
+          fill="#1f2937"
+          fontSize={13}
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  )
+}
+
 function HomePage() {
   return (
     <section className="dashboard-home">
-        <header className="dashboard-home-header">
-          <div className="dashboard-home-actions">
-             </div>
+      <header className="dashboard-home-header">
+        <div className="dashboard-home-actions">
+        </div>
 
-          <div className="dashboard-home-actions">
-            <p className="dashboard-home-eyebrow">الرئيسية</p>
-           
+        <div className="dashboard-home-actions">
+          <p className="dashboard-home-eyebrow">الرئيسية</p>
+
+        </div>
+      </header>
+
+      <section className="dashboard-stats-grid">
+        {stats.map((stat) => (
+          <DashboardStatCard key={stat.title} stat={stat} />
+        ))}
+      </section>
+
+      <section className="dashboard-two-column">
+        <article className="dashboard-panel dashboard-panel-medium">
+          <div className="dashboard-panel-header">
+            <h2>توزيع أنواع العقارات</h2>
           </div>
-        </header>
 
-        <section className="dashboard-stats-grid">
-          {stats.map((stat) => (
-            <DashboardStatCard key={stat.title} stat={stat} />
-          ))}
-        </section>
-
-        <section className="dashboard-two-column">
-          <article className="dashboard-panel dashboard-panel-large">
-            <div className="dashboard-panel-header">
-              <h2>المشاهدات حسب العقار</h2>
-            </div>
-
-            <div className="dashboard-chart-area">
-              <ResponsiveContainer width="100%" height={390}>
-                <BarChart data={viewsByProperty} margin={{ top: 16, right: 0, left: 0, bottom: 24 }}>
-                  <CartesianGrid stroke="#e8edf5" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    tickLine={false}
-                    axisLine={false}
-                    interval={0}
-                    tick={{ fill: '#1f2937', fontSize: 14 }}
-                  />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fill: '#1f2937', fontSize: 14 }} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(21, 89, 183, 0.08)' }}
-                    contentStyle={{
-                      borderRadius: 16,
-                      border: '1px solid #dbe4f0',
-                      boxShadow: '0 16px 30px rgba(15, 23, 42, 0.08)',
-                    }}
-                  />
-                  <Bar dataKey="views" fill="#1559b7" radius={[10, 10, 0, 0]} maxBarSize={48} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </article>
-
-          <article className="dashboard-panel dashboard-panel-medium">
-            <div className="dashboard-panel-header">
-              <h2>توزيع أنواع العقارات</h2>
-            </div>
-
-            <div className="distribution-layout">
-              <div className="distribution-list">
-                {propertyTypes.map((item) => (
-                  <div key={item.name} className="distribution-item">
-                    <div className="distribution-item-head">
+          <div className="distribution-layout">
+            <div className="distribution-list">
+              {propertyTypes.map((item) => (
+                <div key={item.name} className="distribution-item">
+                  <div className="distribution-item-head">
+                    <strong>
                       <span className="distribution-dot" style={{ backgroundColor: item.color }} />
-                      <strong>{item.name}</strong>
-                      <span>{item.value}%</span>
-                    </div>
-                    <p>عدد الوحدات: {item.units}</p>
+                      {item.name}
+                    </strong>
+                    <span>{item.value}%</span>
                   </div>
-                ))}
-              </div>
-
-              <div className="distribution-chart">
-                <ResponsiveContainer width="100%" height={320}>
-                  <PieChart>
-                    <Pie
-                      data={propertyTypes}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={76}
-                      outerRadius={128}
-                      paddingAngle={2}
-                    >
-                      {propertyTypes.map((item) => (
-                        <Cell key={item.name} fill={item.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="distribution-center">
-                  <strong>5</strong>
-                  <span>إجمالي العقارات</span>
+                  <p>عدد الوحدات: {item.units}</p>
                 </div>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section className="dashboard-bottom-grid">
-          <article className="dashboard-panel dashboard-comments-panel">
-            <div className="dashboard-panel-header dashboard-panel-header-link">
-              <h2>التعليقات الجديدة</h2>
-              <button type="button">عرض الكل</button>
-            </div>
-
-            <div className="comments-list">
-              {latestComments.map((comment) => (
-                <article key={comment.id} className="comment-card">
-                  <div className="comment-top">
-                    <div className="comment-avatar">{comment.avatar}</div>
-                    <div className="comment-meta">
-                      <strong>{comment.author}</strong>
-                      <span>{comment.date}</span>
-                    </div>
-                    <div className="comment-rating">
-                      <span>{comment.rating}</span>
-                      <RatingStars />
-                    </div>
-                  </div>
-
-                  <p>{comment.text}</p>
-
-                  <button type="button" className="comment-reply">
-                    رد على التعليق
-                  </button>
-                </article>
               ))}
             </div>
-          </article>
 
-          <article className="dashboard-panel dashboard-bookings-panel">
-            <div className="dashboard-panel-header dashboard-panel-header-link">
-              <h2>أحدث الحجوزات</h2>
-              <button type="button">عرض الكل</button>
+            <div className="distribution-chart">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={propertyTypes}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={115}
+                    paddingAngle={3}
+                  >
+                    {propertyTypes.map((item) => (
+                      <Cell key={item.name} fill={item.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
             </div>
+          </div>
+        </article>
 
-            <div className="bookings-table-wrap">
-              <table className="dashboard-bookings-table">
-                <thead>
-                  <tr>
-                    <th>العميل</th>
-                    <th>اسم العقار</th>
-                    <th>التاريخ</th>
-                    <th>الحالة</th>
-                    <th>المبلغ</th>
+        <article className="dashboard-panel dashboard-panel-large">
+          <div className="dashboard-panel-header">
+            <h2>المشاهدات حسب العقار</h2>
+          </div>
+
+          <div className="dashboard-chart-area">
+            <ResponsiveContainer width="100%" height={355}>
+              <BarChart data={viewsByProperty} margin={{ top: 16, right: 0, left: 0, bottom: 28 }}>
+                <CartesianGrid stroke="#e8edf5" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  tick={<CustomXAxisTick />}
+                  height={58}
+                />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#1f2937', fontSize: 14 }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(21, 89, 183, 0.08)' }}
+                  contentStyle={{
+                    borderRadius: 16,
+                    border: '1px solid #dbe4f0',
+                    boxShadow: '0 16px 30px rgba(15, 23, 42, 0.08)',
+                  }}
+                />
+                <Bar dataKey="views" fill="#1559b7" radius={[10, 10, 0, 0]} maxBarSize={48} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+      </section>
+
+      <section className="dashboard-bottom-grid">
+        <article className="dashboard-panel dashboard-comments-panel">
+          <div className="dashboard-panel-header dashboard-panel-header-link">
+            <h2>التعليقات الجديدة</h2>
+            <button type="button">عرض الكل</button>
+          </div>
+
+          <div className="comments-list">
+            {latestComments.map((comment) => (
+              <article key={comment.id} className="comment-card">
+                <div className="comment-top">
+                  <div className="comment-rating">
+                    <span>{comment.rating}</span>
+                    <RatingStars />
+                  </div>
+                  <div className="comment-meta">
+                    <strong>{comment.author}</strong>
+                    <span>{comment.date}</span>
+                  </div>
+                  <div className="comment-avatar">{comment.avatar}</div>
+                </div>
+
+                <p>{comment.text}</p>
+
+                <button type="button" className="comment-reply">
+                  رد على التعليق
+                </button>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className="dashboard-panel dashboard-bookings-panel">
+          <div className="dashboard-panel-header dashboard-panel-header-link">
+            <h2>أحدث الحجوزات</h2>
+            <button type="button">عرض الكل</button>
+          </div>
+
+          <div className="bookings-table-wrap">
+            <table className="dashboard-bookings-table">
+              <thead>
+                <tr>
+                  <th>العميل</th>
+                  <th>اسم العقار</th>
+                  <th>التاريخ</th>
+                  <th>الحالة</th>
+                  <th>المبلغ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {latestBookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td>{booking.client}</td>
+                    <td>{booking.property}</td>
+                    <td className="muted-cell">{booking.date}</td>
+                    <td>
+                      <span className={statusClassName[booking.status]}>{booking.status}</span>
+                    </td>
+                    <td className="amount-cell">{booking.amount}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {latestBookings.map((booking) => (
-                    <tr key={booking.id}>
-                      <td>{booking.client}</td>
-                      <td>{booking.property}</td>
-                      <td className="muted-cell">{booking.date}</td>
-                      <td>
-                        <span className={statusClassName[booking.status]}>{booking.status}</span>
-                      </td>
-                      <td className="amount-cell">{booking.amount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </article>
-        </section>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
     </section>
   )
 }

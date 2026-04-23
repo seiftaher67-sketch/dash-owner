@@ -192,126 +192,121 @@ function PerformanceTable({ title, tone, rows }) {
 function AnalyticsPage() {
   return (
     <section className="analytics-page">
-        <header className="analytics-page-header">
-          <div className="analytics-page-title">
-            <h1>الإحصائيات</h1>
-            <div className="properties-breadcrumb">
-              <span>الرئيسية</span>
-              <ChevronLeft size={18} />
-              <strong>الإحصائيات</strong>
-            </div>
+      <header className="analytics-page-header">
+        <div className="analytics-page-title">
+          <h1>الإحصائيات</h1>
+          <div className="properties-breadcrumb">
+            <span>الرئيسية</span>
+            <ChevronLeft size={18} />
+            <strong>الإحصائيات</strong>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <section className="analytics-filters">
-          <button type="button" className="analytics-filter-chip">
-            <ChevronDown size={22} />
-            <span>جميع العقارات</span>
-          </button>
+      <section className="analytics-filters">
+        <button type="button" className="analytics-filter-chip">
+          <ChevronDown size={22} />
+          <span>جميع العقارات</span>
+        </button>
 
-          <button type="button" className="analytics-filter-chip">
-            <ChevronDown size={22} />
-            <span>آخر 7 أيام</span>
-          </button>
-        </section>
+        <button type="button" className="analytics-filter-chip">
+          <ChevronDown size={22} />
+          <span>آخر 7 أيام</span>
+        </button>
+      </section>
 
-        <section className="analytics-stats-grid">
-          {stats.map((stat) => (
-            <AnalyticsStatCard key={stat.title} stat={stat} />
-          ))}
-        </section>
+      <section className="analytics-stats-grid">
+        {stats.map((stat) => (
+          <AnalyticsStatCard key={stat.title} stat={stat} />
+        ))}
+      </section>
 
-        <section className="analytics-two-column">
-          <article className="analytics-panel">
-            <div className="analytics-panel-title">المشاهدات حسب العقار</div>
-            <div className="analytics-chart-wrap">
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={viewsByProperty} margin={{ top: 12, right: 0, left: 0, bottom: 18 }}>
-                  <CartesianGrid stroke="#e8edf5" vertical={false} />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tick={{ fill: '#1f2937', fontSize: 12 }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fill: '#697586', fontSize: 12 }} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(21, 89, 183, 0.08)' }}
-                    contentStyle={{ borderRadius: 14, border: '1px solid #dbe4f0' }}
-                  />
-                  <Bar dataKey="views" fill="#1559b7" radius={[8, 8, 0, 0]} maxBarSize={38} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </article>
-
-          <article className="analytics-panel">
-            <div className="analytics-panel-title">توزيع أنواع العقارات</div>
-            <div className="distribution-layout analytics-distribution-layout">
-              <div className="distribution-list">
-                {propertyTypes.map((item) => (
-                  <div key={item.name} className="distribution-item">
-                    <div className="distribution-item-head">
-                      <span className="distribution-dot" style={{ backgroundColor: item.color }} />
-                      <strong>{item.name}</strong>
-                      <span>{item.value}%</span>
-                    </div>
-                    <p>عدد الوحدات: {item.units} {item.name === 'الغرف الفندقية' ? 'غرف' : item.name === 'الفلل' ? 'فلل' : 'شقق'}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="distribution-chart">
-                <ResponsiveContainer width="100%" height={270}>
-                  <PieChart>
-                    <Pie
-                      data={propertyTypes}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={62}
-                      outerRadius={110}
-                      paddingAngle={2}
-                    >
-                      {propertyTypes.map((item) => (
-                        <Cell key={item.name} fill={item.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div className="distribution-center">
-                  <strong>5</strong>
-                  <span>إجمالي العقارات</span>
-                </div>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section className="analytics-panel analytics-panel-wide">
-          <div className="analytics-panel-title">الحجوزات الشهرية</div>
-          <div className="analytics-chart-wrap analytics-area-wrap">
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyBookings} margin={{ top: 12, right: 12, left: 12, bottom: 0 }}>
-                <CartesianGrid stroke="#e8edf5" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: '#7b8794', fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#7b8794', fontSize: 12 }} />
+      <section className="analytics-two-column">
+        <article className="analytics-panel">
+          <div className="analytics-panel-title">المشاهدات حسب العقار</div>
+          <div className="analytics-chart-wrap">
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={viewsByProperty} margin={{ top: 12, right: 0, left: 0, bottom: 18 }}>
+                <CartesianGrid stroke="#e8edf5" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tick={{ fill: '#1f2937', fontSize: 12 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#697586', fontSize: 12 }} />
                 <Tooltip
+                  cursor={{ fill: 'rgba(21, 89, 183, 0.08)' }}
                   contentStyle={{ borderRadius: 14, border: '1px solid #dbe4f0' }}
-                  formatter={(value) => [`${value} حجز`, 'الحجوزات']}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="bookings"
-                  stroke="#1559b7"
-                  strokeWidth={2}
-                  fill="rgba(21, 89, 183, 0.25)"
-                  fillOpacity={1}
-                />
-              </AreaChart>
+                <Bar dataKey="views" fill="#1559b7" radius={[8, 8, 0, 0]} maxBarSize={38} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
-        </section>
+        </article>
 
-        <PerformanceTable title="أعلى العقارات أداءً" tone="success" rows={topPerformers} />
-        <PerformanceTable title="العقارات الأقل زيارة" tone="danger" rows={lowPerformers} />
+        <article className="analytics-panel">
+          <div className="analytics-panel-title">توزيع أنواع العقارات</div>
+          <div className="distribution-layout analytics-distribution-layout">
+            <div className="distribution-list">
+              {propertyTypes.map((item) => (
+                <div key={item.name} className="distribution-item">
+                  <div className="distribution-item-head">
+                    <span className="distribution-dot" style={{ backgroundColor: item.color }} />
+                    <strong>{item.name}</strong>
+                    <span>{item.value}%</span>
+                  </div>
+                  <p>عدد الوحدات: {item.units} {item.name === 'الغرف الفندقية' ? 'غرف' : item.name === 'الفلل' ? 'فلل' : 'شقق'}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="distribution-chart">
+              <ResponsiveContainer width="100%" height={270}>
+                <PieChart>
+                  <Pie
+                    data={propertyTypes}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={62}
+                    outerRadius={110}
+                    paddingAngle={2}
+                  >
+                    {propertyTypes.map((item) => (
+                      <Cell key={item.name} fill={item.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section className="analytics-panel analytics-panel-wide">
+        <div className="analytics-panel-title">الحجوزات الشهرية</div>
+        <div className="analytics-chart-wrap analytics-area-wrap">
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={monthlyBookings} margin={{ top: 12, right: 12, left: 12, bottom: 0 }}>
+              <CartesianGrid stroke="#e8edf5" />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: '#7b8794', fontSize: 12 }} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fill: '#7b8794', fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{ borderRadius: 14, border: '1px solid #dbe4f0' }}
+                formatter={(value) => [`${value} حجز`, 'الحجوزات']}
+              />
+              <Area
+                type="monotone"
+                dataKey="bookings"
+                stroke="#1559b7"
+                strokeWidth={2}
+                fill="rgba(21, 89, 183, 0.25)"
+                fillOpacity={1}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <PerformanceTable title="أعلى العقارات أداءً" tone="success" rows={topPerformers} />
+      <PerformanceTable title="العقارات الأقل زيارة" tone="danger" rows={lowPerformers} />
     </section>
   )
 }
